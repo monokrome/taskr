@@ -1,0 +1,74 @@
+#!/usr/bin/env coffee
+
+
+pipeliner = require 'pipeliner'
+prefer = require 'prefer'
+lodash = require 'lodash'
+
+
+class ConfigurationError extends Error
+  @messages:
+    pipeline: 'You must provide a pipeline in your configuration.'
+    assets: 'You must provide a transform configuration.'
+
+  @create: (type) -> return new @ @messages[type]
+
+
+class TaskRunner
+  normalizeConfiguration: (options) ->
+    unless lodash.isArray options
+      options = [options]
+
+    for pipeline in options
+      for name, options of pipeline
+        # Converts a string to a task configuration
+        if lodash.isString options
+          options = task: options
+          pipeline[name] = options
+
+        # Convert any extra options to the (redundant?) pipeliner options format
+        else
+          pipeline[name] =
+            task: pipeline[name].task
+            options: lodash.omit 'task', options
+
+        # Allow strings instead of task module names
+        if lodash.isString options.task
+          options.task = require options.task
+
+      unless lodash.isArray options.transform
+        options.transform = [options.transform]
+
+      return options
+
+  verifyConfiguration: (options) ->
+    throw ConfigurationError.create 'pipeline' unless options.pipeline?
+    throw ConfigurationError.create 'assets' unless options.transform?
+
+  loadConfiguration: (options, start=false) ->
+    @verifyConfiguration options
+    @options = @normalizeConfiguration options
+
+    @start() if start is true
+
+  start: ->
+    for transformation in @options
+      pipeliner.plumb transformation.pipeline, transformation.tranform
+
+  initialize: ->
+    prefer.load 'pipeline.coffee', (err, configurator) =>
+      throw err if err
+
+      configurator.get (err, options) =>
+        throw err if err
+        @loadConfiguration options, true
+
+
+runner = new TaskRunner
+runner.initialize()
+
+
+module.exports = {
+  TaskRunner
+  runner
+}
