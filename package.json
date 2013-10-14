@@ -1,0 +1,16 @@
+{
+  "name": "taskr",
+  "version": "0.0.0",
+  "description": "Build with node-task - and without hassle.",
+  "author": "Brandon R. Stoner",
+  "author_email": "monokrome@monokro.me",
+  "main": "bin/taskr",
+  "license": "MIT",
+  "dependencies": {
+    "pipeliner": "~0.1.0",
+    "prefer": "~0.4.0",
+    "optimist": "~0.6.0",
+    "lodash": "~2.2.1"
+  },
+  "devDependencies": {}
+}
